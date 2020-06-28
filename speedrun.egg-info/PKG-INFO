@@ -1,0 +1,20 @@
+Metadata-Version: 1.2
+Name: speedrun
+Version: 0.1.0
+Summary: Plots speedrun times since a games release.
+Home-page: https://github.com/hrfee/speedrun
+Author: Harvey Tindall
+Author-email: harveyltindall@gmail.com
+License: UNKNOWN
+Description: # Speedrun
+        Grabs speedrun data from [speedrun.com](https://speedrun.com) and run times since the release of a chosen game.
+        
+        # Install
+        ```
+        git clone https://github.com/hrfee/speedrun.git
+        cd speedrun
+        poetry build
+        pip install dist/<package name
+        
+Platform: UNKNOWN
+Requires-Python: >=3.6.1,<4.0.0

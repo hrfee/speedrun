@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <!-- Bootstrap CSS -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-serialize-object/2.5.0/jquery.serialize-object.min.js" integrity="sha256-E8KRdFk/LTaaCBoQIV/rFNc0s3ICQQiOHFT4Cioifa8=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js" integrity="sha256-Xb6SSzhH3wEPC4Vy3W70Lqh9Y3Du/3KxPqI2JHQSpTw=" crossorigin="anonymous"></script>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js" charset="utf-8"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <style>
+            .pageContainer {
+                margin: 20%;
+            }
+            @media (max-width: 1100px) {
+                .pageContainer {
+                    margin: 2%;
+                }
+            }
+            h1 {
+                /*margin: 20%;*/
+                margin-bottom: 5%;
+            }
+            .linkGroup {
+                /*margin: 20%;*/
+                margin-bottom: 5%;
+                margin-top: 5%;
+            }
+            .linkForm {
+                /*margin: 20%;*/
+                margin-top: 5%;
+                margin-bottom: 5%;
+            }
+            .contactBox {
+                /*margin: 20%;*/
+                margin-top: 5%;
+                color: grey;
+            }
+            .fa-clipboard {
+                color: grey;
+            }
+            .fa-clipboard:hover {
+                color: black;
+            }
+        </style>
+        <title>Speedrun Timeline</title>
+    </head>
+    <body>
+        <div class="pageContainer">
+            <h1>Speedrun Timeline</h1>
+            This tool allow you to see how speedrun times have progressed since a game's initial release. All data from <a href="https://speedrun.com">speedrun.com</a>.
+            <div class="card bg-light mb-3">
+                <div class="card-header">Choose a game</div>
+                <div class="card-body">
+                    <label for="game_name">Game Name</label>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="game_name" placeholder="Portal 2">
+                        <div class="btn-group" role="group" style="margin-left: 1rem;">
+                            <button type="button" class="btn btn-primary" id="search_button">Search</button>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="resultsArea">
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-light mb-3 collapse" id="cat_card">
+                <div class="card-header">Choose a category</div>
+                <div class="card-body container">
+                    <div class="row">
+                        <div class="col-sm">
+                            <div class="card-text">NOTE: Currently only supports per-game categories.</div>
+                            <div id="catArea"></div>
+                        </div>
+                        <div class="col-sm d-flex align-self-center" id="loading_box"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card bg-light mb-3 collapse" id="graph_card">
+                <div class="card-header">Graph</div>
+                <div class="card-body" id="graph_body"></div>
+            </div>
+        </div>
+        <script>
+            var game_name = '';
+            var game_category = '';
+            document.getElementById('search_button').onclick = function () {
+                var search_button = document.getElementById('search_button');
+                search_button.disabled = true;
+                if (search_button.classList.contains('btn-danger')) {
+                    search_button.classList.remove('btn-danger');
+                    search_button.classList.add('btn-primary');
+                }
+                search_button.innerHTML =
+                    '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="margin-right: 0.5rem;"></span>' +
+                    'Loading...';
+                var send = {};
+                send['name'] = document.getElementById('game_name').value;
+                var area = document.getElementById('resultsArea');
+                area.textContent = '';
+                $.ajax('/search', {
+                    data : JSON.stringify(send),
+                    type : 'POST',
+                    contentType : 'application/json',
+                    complete : function(response) {
+                        var games = response['responseJSON']['games'];
+                        if (games.length != 0) {
+                            search_button.textContent = 'Search';
+                            search_button.disabled = false;
+                            area.textContent = '';
+                            var group = document.createElement('div');
+                            group.classList.add('list-group');
+                            group.id = 'resultsList';
+                            for (var i = 0; i < games.length; i++) {
+                                var button = document.createElement('button');
+                                button.setAttribute('type', 'button');
+                                button.classList.add('list-group-item', 'list-group-item-action');
+                                button.textContent = games[i];
+                                button.id = games[i];
+                                button.onclick = function () {
+                                    var catArea = document.getElementById('catArea');
+                                    catArea.textContent = '';
+                                    game_name = this.id;
+                                    var child = this.parentNode.getElementsByClassName('active')[0];
+                                    if (typeof child != "undefined") {
+                                        child.classList.remove('active');
+                                    }
+                                    this.classList.add('active')
+                                    var send = {}
+                                    send['name'] = game_name
+                                    $.ajax('/categories', {
+                                        data : JSON.stringify(send),
+                                        type : 'POST',
+                                        contentType : 'application/json',
+                                        complete : function(response) {
+                                            var categories = response['responseJSON']['categories'];
+                                            if (categories.length != 0) {
+                                                var catGroup = document.createElement('div');
+                                                catGroup.classList.add('list-group');
+                                                catGroup.id = 'catList';
+                                                for (var i = 0; i < categories.length; i++) {
+                                                    var button = document.createElement('button');
+                                                    button.setAttribute('type', 'button');
+                                                    button.classList.add('list-group-item', 'list-group-item-action');
+                                                    button.textContent = categories[i];
+                                                    button.id = categories[i];
+                                                    button.onclick = function () {
+                                                        game_category = this.id;
+                                                        var child = this.parentNode.getElementsByClassName('active')[0];
+                                                        if (typeof child != "undefined") {
+                                                            child.classList.remove('active');
+                                                        };
+                                                        var graphArea = document.getElementById('graph_body');
+                                                        var loadArea = document.getElementById('loading_box');
+                                                        var spinner = document.createElement('div');
+                                                        spinner.classList.add('spinner-border', 'd-flex', 'align-self-center');
+                                                        spinner.setAttribute('style', 'width: 3rem; height: 3rem; margin-left: 2rem;');
+                                                        spinner.setAttribute('role', 'status');
+                                                        spinner.innerHTML = '<span class="sr-only">Loading graph...</span>';
+                                                        loadArea.appendChild(document.createTextNode('Loading graph...'));
+                                                        loadArea.appendChild(spinner)
+                                                        var send = {}
+                                                        send['name'] = game_name;
+                                                        send['category'] = game_category;
+                                                        $.ajax('/graph', {
+                                                            data : JSON.stringify(send),
+                                                            type : 'POST',
+                                                            contentType : 'application/json',
+                                                            complete : function(response) {
+                                                                loadArea.textContent = '';
+                                                                var graph_data = response['responseJSON'];
+                                                                Plotly.react('graph_body',graph_data['data'],graph_data['layout']);
+                                                                $('#graph_card').collapse('show');
+                                                            },
+                                                        });
+                                                        this.classList.add('active');
+                                                    };
+                                                    catGroup.appendChild(button);
+                                                };
+                                                catArea.appendChild(catGroup);
+                                                $('#cat_card').collapse('show');
+                                            };
+                                        },
+                                    });
+                                };
+                                group.appendChild(button);
+                            };
+                            area.appendChild(group);
+                        } else {
+                            search_button.classList.remove('btn-primary');
+                            search_button.classList.add('btn-danger');
+                            search_button.textContent = 'No results';
+                            search_button.disabled = false;
+                        }
+
+                    }
+                });
+            }
+        </script>
+
+
+    </body>
+</html>
