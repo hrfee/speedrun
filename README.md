@@ -11,7 +11,7 @@ cd speedrun
 poetry update
 poetry install
 ```
-
+A dockerfile is also available.
 
 # Usage
 
