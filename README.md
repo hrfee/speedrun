@@ -2,6 +2,8 @@
 Grabs speedrun data from [speedrun.com](https://speedrun.com) and plot run times since the release of a chosen game with plotly.js.
 Currently only supports 'per-game' categories.
 
+[Demo](https://speedrun.hrfee.pw)
+
 # Install
 Grab a .whl from the release section to install with pip, or
 
